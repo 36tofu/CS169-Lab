@@ -147,16 +147,50 @@ int main (int argc, char *argv[])
   Ipv4InterfaceContainer ApInterface;
   ApInterface = address.Assign (apDevice);
 
-  // Setting applications
-  UdpServerHelper myServer (9);
+  //Create 4 servers ports 9-12
+  UdpEchoServerHelper myServer (9);
+  UdpEchoServerHelper myServer1 (10);
+  UdpEchoServerHelper myServer2 (11);
+  UdpEchoServerHelper myServer3 (12);
+  
+  //Install 4 servers on AP node 
   ApplicationContainer serverApp = myServer.Install (wifiApNode);
   serverApp.Start (Seconds (0.0));
   serverApp.Stop (Seconds (simulationTime + 1));
 
-  UdpClientHelper myClient (ApInterface.GetAddress (0), 9);
+  ApplicationContainer serverApp1 = myServer1.Install (wifiApNode);
+  serverApp1.Start (Seconds (0.0));
+  serverApp1.Stop (Seconds (simulationTime + 1));
+
+  ApplicationContainer serverApp2 = myServer2.Install (wifiApNode);
+  serverApp2.Start (Seconds (0.0));
+  serverApp2.Stop (Seconds (simulationTime + 1));
+
+  ApplicationContainer serverApp3 = myServer3.Install (wifiApNode)/;
+  serverApp3.Start (Seconds (0.0));
+  serverApp3.Stop (Seconds (simulationTime + 1));
+
+
+  //Install UDP clients on each of the MS nodes 
+  UdpEchoClientHelper myClient (ApInterface.GetAddress (0), 9);
   myClient.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
   myClient.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
   myClient.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+
+  UdpEchoClientHelper myClient1 (ApInterface.GetAddress (0), 10);
+  myClient1.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
+  myClient1.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  myClient1.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+
+  UdpEchoClientHelper myClient2 (ApInterface.GetAddress (0), 11);
+  myClient2.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
+  myClient2.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  myClient2.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+
+  UdpEchoClientHelper myClient3 (ApInterface.GetAddress (0), 12);
+  myClient3.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
+  myClient3.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  myClient3.SetAttribute ("PacketSize", UintegerValue (payloadSize));
 
   // Saturated UDP traffic from stations to AP
   ApplicationContainer clientApp1 = myClient.Install (wifiStaNodes);
