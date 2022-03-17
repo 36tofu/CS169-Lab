@@ -172,7 +172,7 @@ int main (int argc, char *argv[])
   //Install UDP clients on each of the MS nodes 
   UdpEchoClientHelper myClient (ApInterface.GetAddress (0), 9);
   myClient.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient.SetAttribute ("Interval", TimeValue (Time ("0.1"))); //packets/s
+  myClient.SetAttribute ("Interval", TimeValue (Time ("0.0032"))); //packets/s
   myClient.SetAttribute ("PacketSize", UintegerValue (payloadSize));
   ApplicationContainer clientApp0 = myClient.Install(wifiStaNodes.Get(0));
   clientApp0.Start(Seconds(1));
@@ -181,7 +181,7 @@ int main (int argc, char *argv[])
    
   UdpEchoClientHelper myClient1 (ApInterface.GetAddress (0), 10);
   myClient1.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient1.SetAttribute ("Interval", TimeValue (Time ("0.1"))); //packets/s
+  myClient1.SetAttribute ("Interval", TimeValue (Time ("0.0032"))); //packets/s
   myClient1.SetAttribute ("PacketSize", UintegerValue (payloadSize));
   ApplicationContainer clientApp1 = myClient1.Install(wifiStaNodes.Get(0));
   clientApp0.Start(Seconds(1));
@@ -189,7 +189,7 @@ int main (int argc, char *argv[])
   
   UdpEchoClientHelper myClient2 (ApInterface.GetAddress (0), 11);
   myClient2.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient2.SetAttribute ("Interval", TimeValue (Time ("0.1"))); //packets/s
+  myClient2.SetAttribute ("Interval", TimeValue (Time ("0.0032"))); //packets/s
   myClient2.SetAttribute ("PacketSize", UintegerValue (payloadSize));
   ApplicationContainer clientApp2 = myClient2.Install(wifiStaNodes.Get(0));
   clientApp0.Start(Seconds(1));
@@ -197,7 +197,7 @@ int main (int argc, char *argv[])
   
   UdpEchoClientHelper myClient3 (ApInterface.GetAddress (0), 12);
   myClient3.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient3.SetAttribute ("Interval", TimeValue (Time ("0.1"))); //packets/s
+  myClient3.SetAttribute ("Interval", TimeValue (Time ("0.0032"))); //packets/s
   myClient3.SetAttribute ("PacketSize", UintegerValue (payloadSize));
   ApplicationContainer clientApp3 = myClient3.Install(wifiStaNodes.Get(0));
   clientApp0.Start(Seconds(1));
@@ -223,6 +223,8 @@ int main (int argc, char *argv[])
   Simulator::Run ();
   Simulator::Destroy ();
 
+  double percentage =((double)packetSent -(double)packetRec) /(double)packetSent;
+  std::cout << "packet loss rate: " << percentage << '\n';
  //uint32_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
   double throughput = packetRec * payloadSize * 8 / (simulationTime * 1000000.0);
   std::cout << "Throughput: " << throughput << " Mbit/s" << '\n';
