@@ -1,22 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/*
- * Copyright (c) 2015 Sébastien Deronne
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation;
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * Author: Sébastien Deronne <sebastien.deronne@gmail.com>
- */
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -46,6 +27,22 @@
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("SimplesHtHiddenStations");
+
+uint64_t packetSent = 0;
+uint64_t packetRec = 0;
+
+
+void clientSend (std::string context, Ptr<const Packet> packet)
+{
+	//NS_LOG_UNCOND(context);
+	packetSent+=1;
+}
+
+
+void serverRec (std::string context, Ptr<const Packet> packet)
+{
+	packetRec+=1;
+}
 
 int main (int argc, char *argv[])
 {
@@ -157,46 +154,55 @@ int main (int argc, char *argv[])
   //Install 4 servers on AP node 
   ApplicationContainer serverApp = myServer.Install (wifiApNode);
   serverApp.Start (Seconds (0.0));
-  serverApp.Stop (Seconds (simulationTime + 1));
-  /*
+  serverApp.Stop (Seconds (simulationTime + 2));
+   
   ApplicationContainer serverApp1 = myServer1.Install (wifiApNode);
   serverApp1.Start (Seconds (0.0));
-  serverApp1.Stop (Seconds (simulationTime + 1));
+  serverApp1.Stop (Seconds (simulationTime + 2));
   
   ApplicationContainer serverApp2 = myServer2.Install (wifiApNode);
   serverApp2.Start (Seconds (0.0));
-  serverApp2.Stop (Seconds (simulationTime + 1));
+  serverApp2.Stop (Seconds (simulationTime + 2));
   
   ApplicationContainer serverApp3 = myServer3.Install (wifiApNode);
   serverApp3.Start (Seconds (0.0));
-  serverApp3.Stop (Seconds (simulationTime + 1));
-  */
+  serverApp3.Stop (Seconds (simulationTime + 2));
+  
 
   //Install UDP clients on each of the MS nodes 
   UdpEchoClientHelper myClient (ApInterface.GetAddress (0), 9);
   myClient.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  myClient.SetAttribute ("Interval", TimeValue (Time ("0.1"))); //packets/s
   myClient.SetAttribute ("PacketSize", UintegerValue (payloadSize));
   ApplicationContainer clientApp0 = myClient.Install(wifiStaNodes.Get(0));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
  
-  /* 
+   
   UdpEchoClientHelper myClient1 (ApInterface.GetAddress (0), 10);
   myClient1.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient1.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  myClient1.SetAttribute ("Interval", TimeValue (Time ("0.1"))); //packets/s
   myClient1.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+  ApplicationContainer clientApp1 = myClient1.Install(wifiStaNodes.Get(0));
+  clientApp0.Start(Seconds(1));
+  clientApp0.Stop (Seconds (simulationTime+1));
   
   UdpEchoClientHelper myClient2 (ApInterface.GetAddress (0), 11);
   myClient2.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient2.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  myClient2.SetAttribute ("Interval", TimeValue (Time ("0.1"))); //packets/s
   myClient2.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+  ApplicationContainer clientApp2 = myClient2.Install(wifiStaNodes.Get(0));
+  clientApp0.Start(Seconds(1));
+  clientApp0.Stop (Seconds (simulationTime+1));
   
   UdpEchoClientHelper myClient3 (ApInterface.GetAddress (0), 12);
   myClient3.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient3.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  myClient3.SetAttribute ("Interval", TimeValue (Time ("0.1"))); //packets/s
   myClient3.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-  */
+  ApplicationContainer clientApp3 = myClient3.Install(wifiStaNodes.Get(0));
+  clientApp0.Start(Seconds(1));
+  clientApp0.Stop (Seconds (simulationTime+1));
+  
 
   /*
   // Saturated UDP traffic from stations to AP
@@ -211,11 +217,14 @@ int main (int argc, char *argv[])
 
   Simulator::Stop (Seconds (simulationTime + 1));
 
+  Config::Connect("/NodeList/*/ApplicationList/*/$ns3::UdpEchoClient/Tx", MakeCallback(&clientSend));
+  Config::Connect("/NodeList/*/ApplicationList/*/$ns3::UdpEchoServer/Rx", MakeCallback(&serverRec));
+
   Simulator::Run ();
   Simulator::Destroy ();
 
-  uint32_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
-  double throughput = totalPacketsThrough * payloadSize * 8 / (simulationTime * 1000000.0);
+ //uint32_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
+  double throughput = packetRec * payloadSize * 8 / (simulationTime * 1000000.0);
   std::cout << "Throughput: " << throughput << " Mbit/s" << '\n';
 
   return 0;
