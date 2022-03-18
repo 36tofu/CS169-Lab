@@ -6,7 +6,7 @@
 #include "ns3/mobility-module.h"
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/internet-module.h"
-
+#include <string>
 // This example considers two hidden stations in an 802.11n network which supports MPDU aggregation.
 // The user can specify whether RTS/CTS is used and can set the number of aggregated MPDUs.
 //
@@ -34,7 +34,7 @@ uint64_t packetRec = 0;
 
 void clientSend (std::string context, Ptr<const Packet> packet)
 {
-	//NS_LOG_UNCOND(context);
+	NS_LOG_UNCOND(context);
 	packetSent+=1;
 }
 
@@ -51,7 +51,8 @@ int main (int argc, char *argv[])
   //float intervalTime = 0.1; //seconds
   uint32_t nMpdus = 1;
   uint32_t maxAmpduSize = 0;
-  bool enableRts = 0;
+  bool enableRts = 1;
+  std::string interval = "0.00390";
 
   CommandLine cmd;
   cmd.AddValue ("nMpdus", "Number of aggregated MPDUs", nMpdus);
@@ -159,7 +160,7 @@ int main (int argc, char *argv[])
   ApplicationContainer serverApp1 = myServer1.Install (wifiApNode);
   serverApp1.Start (Seconds (0.0));
   serverApp1.Stop (Seconds (simulationTime + 2));
-  
+   
   ApplicationContainer serverApp2 = myServer2.Install (wifiApNode);
   serverApp2.Start (Seconds (0.0));
   serverApp2.Stop (Seconds (simulationTime + 2));
@@ -172,34 +173,34 @@ int main (int argc, char *argv[])
   //Install UDP clients on each of the MS nodes 
   UdpEchoClientHelper myClient (ApInterface.GetAddress (0), 9);
   myClient.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient.SetAttribute ("Interval", TimeValue (Time ("0.0032"))); //packets/s
+  myClient.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
   myClient.SetAttribute ("PacketSize", UintegerValue (payloadSize));
   ApplicationContainer clientApp0 = myClient.Install(wifiStaNodes.Get(0));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
  
-   
+    
   UdpEchoClientHelper myClient1 (ApInterface.GetAddress (0), 10);
   myClient1.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient1.SetAttribute ("Interval", TimeValue (Time ("0.0032"))); //packets/s
+  myClient1.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
   myClient1.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-  ApplicationContainer clientApp1 = myClient1.Install(wifiStaNodes.Get(0));
+  ApplicationContainer clientApp1 = myClient1.Install(wifiStaNodes.Get(1));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
-  
+   
   UdpEchoClientHelper myClient2 (ApInterface.GetAddress (0), 11);
   myClient2.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient2.SetAttribute ("Interval", TimeValue (Time ("0.0032"))); //packets/s
+  myClient2.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
   myClient2.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-  ApplicationContainer clientApp2 = myClient2.Install(wifiStaNodes.Get(0));
+  ApplicationContainer clientApp2 = myClient2.Install(wifiStaNodes.Get(2));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
   
   UdpEchoClientHelper myClient3 (ApInterface.GetAddress (0), 12);
   myClient3.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient3.SetAttribute ("Interval", TimeValue (Time ("0.0032"))); //packets/s
+  myClient3.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
   myClient3.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-  ApplicationContainer clientApp3 = myClient3.Install(wifiStaNodes.Get(0));
+  ApplicationContainer clientApp3 = myClient3.Install(wifiStaNodes.Get(3));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
   
@@ -223,11 +224,14 @@ int main (int argc, char *argv[])
   Simulator::Run ();
   Simulator::Destroy ();
 
-  double percentage =((double)packetSent -(double)packetRec) /(double)packetSent;
-  std::cout << "packet loss rate: " << percentage << '\n';
+  double lostPackets = packetSent - packetRec;
+  std::cout << "lost packets: " << lostPackets << "\n"; 
+  double percentage =(((double)packetSent -(double)packetRec) /(double)packetSent)*100;
+  std::cout << "packet loss rate: " << percentage << "%" << '\n';
  //uint32_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
   double throughput = packetRec * payloadSize * 8 / (simulationTime * 1000000.0);
   std::cout << "Throughput: " << throughput << " Mbit/s" << '\n';
+  std::cout << "interval: " << interval << "\n";
 
   return 0;
 }
