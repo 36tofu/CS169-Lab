@@ -31,17 +31,42 @@ NS_LOG_COMPONENT_DEFINE ("SimplesHtHiddenStations");
 uint64_t packetSent = 0;
 uint64_t packetRec = 0;
 
+uint64_t packetSent0 = 0;
+uint64_t packetRec0 = 0;
+
+uint64_t packetSent1 = 0;
+uint64_t packetRec1 = 0;
+
+uint64_t packetSent2 = 0;
+uint64_t packetRec2 = 0;
+
+uint64_t packetSent3 = 0;
+uint64_t packetRec3 = 0;
+
+uint64_t lostPackets0 = 0, lostPackets1 = 0, lostPackets2 = 0, lostPackets3 = 0; 
+double throughput0 = 0, throughput1 = 0, throughput2 = 0, throughput3 = 0; 
 
 void clientSend (std::string context, Ptr<const Packet> packet)
 {
 	NS_LOG_UNCOND(context);
-	packetSent+=1;
+	packetSent+=1;  //total packets sent 
+        if(context == "/NodeList/0/ApplicationList/0/$ns3::UdpEchoClient/Tx") packetSent0++;
+	else if(context == "/NodeList/1/ApplicationList/0/$ns3::UdpEchoClient/Tx") packetSent1++;
+	else if(context == "/NodeList/2/ApplicationList/0/$ns3::UdpEchoClient/Tx") packetSent2++;
+	else if(context == "/NodeList/3/ApplicationList/0/$ns3::UdpEchoClient/Tx") packetSent3++;                      
 }
 
 
 void serverRec (std::string context, Ptr<const Packet> packet)
 {
-	packetRec+=1;
+	NS_LOG_UNCOND(context);
+	packetRec+=1; //total packet sent
+        std::cout << "chengyu tu madre" << "\n"; 
+        if(context == "/NodeList/3/ApplicationList/0/$ns3::UdpEchoServer/Rx") packetRec0++;
+	else if(context == "/NodeList/3/ApplicationList/1/$ns3::UdpEchoServer/Rx") packetRec1++;
+	else if(context == "/NodeList/3/ApplicationList/2/$ns3::UdpEchoServer/Rx") packetRec2++;
+	else if(context == "/NodeList/4/ApplicationList/3/$ns3::UdpEchoServer/Rx") packetRec3++;
+       //first number is decided by how many Ms there 1-4 
 }
 
 int main (int argc, char *argv[])
@@ -51,8 +76,8 @@ int main (int argc, char *argv[])
   //float intervalTime = 0.1; //seconds
   uint32_t nMpdus = 1;
   uint32_t maxAmpduSize = 0;
-  bool enableRts = 1;
-  std::string interval = "0.00390";
+  bool enableRts = 0;
+  std::string interval = "0.003";
 
   CommandLine cmd;
   cmd.AddValue ("nMpdus", "Number of aggregated MPDUs", nMpdus);
@@ -195,7 +220,7 @@ int main (int argc, char *argv[])
   ApplicationContainer clientApp2 = myClient2.Install(wifiStaNodes.Get(2));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
-  
+  /*
   UdpEchoClientHelper myClient3 (ApInterface.GetAddress (0), 12);
   myClient3.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
   myClient3.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
@@ -203,7 +228,7 @@ int main (int argc, char *argv[])
   ApplicationContainer clientApp3 = myClient3.Install(wifiStaNodes.Get(3));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
-  
+  */
 
   /*
   // Saturated UDP traffic from stations to AP
@@ -224,8 +249,38 @@ int main (int argc, char *argv[])
   Simulator::Run ();
   Simulator::Destroy ();
 
+  lostPackets0 = packetSent0 - packetRec0;
+  lostPackets1 = packetSent1 - packetRec1;
+  lostPackets2 = packetSent2 - packetRec2;
+  lostPackets3 = packetSent3 - packetRec3;
+
+  throughput0 = packetRec0 * payloadSize * 8 / (simulationTime *  1000000.0 );
+  throughput1 = packetRec1 * payloadSize * 8 / (simulationTime *  1000000.0 );
+  throughput2 = packetRec2 * payloadSize * 8 / (simulationTime *  1000000.0 );
+  throughput3 = packetRec3 * payloadSize * 8 / (simulationTime *  1000000.0 );
+
+  std::cout << "Packets sent for client 0: " << packetSent0 << "\n";
+  std::cout << "Packets sent for client 1: " << packetSent1 << "\n";
+  std::cout << "Packets sent for client 2: " << packetSent2 << "\n";
+  std::cout << "Packets sent for client 3: " << packetSent3 << "\n\n";
+
+  std::cout << "Packets recv for client 0: " << packetRec0 << "\n";
+  std::cout << "Packets recv for client 1: " << packetRec1 << "\n";
+  std::cout << "Packets recv for client 2: " << packetRec2 << "\n";
+  std::cout << "Packets recv for client 3: " << packetRec3 << "\n\n";
+
+  std::cout << "lost packets for client 0: " << lostPackets0 << "\n";
+  std::cout << "lost packets for client 1: " << lostPackets1 << "\n";
+  std::cout << "lost packets for client 2: " << lostPackets2 << "\n";
+  std::cout << "lost packets for client 3: " << lostPackets3 << "\n\n";
+
+  std::cout << "throughput for client 0: " << throughput0 << "\n";
+  std::cout << "throughput for client 1: " << throughput1 << "\n";
+  std::cout << "throughput for client 2: " << throughput2 << "\n";
+  std::cout << "throughput for client 3: " << throughput3 << "\n\n";
+
   double lostPackets = packetSent - packetRec;
-  std::cout << "lost packets: " << lostPackets << "\n"; 
+  std::cout << "total lost packets: " << lostPackets << "\n"; 
   double percentage =(((double)packetSent -(double)packetRec) /(double)packetSent)*100;
   std::cout << "packet loss rate: " << percentage << "%" << '\n';
  //uint32_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
