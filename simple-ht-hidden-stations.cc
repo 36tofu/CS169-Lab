@@ -28,6 +28,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("SimplesHtHiddenStations");
 
+//declare variables needed 
 int packetSent = 0;
 int packetRec = 0;
 
@@ -45,8 +46,8 @@ int packetRec3 = 0;
 
 int lostPackets0 = 0, lostPackets1 = 0, lostPackets2 = 0, lostPackets3 = 0; 
 double throughput0 = 0, throughput1 = 0, throughput2 = 0, throughput3 = 0; 
-
-void clientSend (std::string context, Ptr<const Packet> packet)
+//trace sink function for keeping track of packets sent  
+void Send (std::string context, Ptr<const Packet> packet)
 {
 	NS_LOG_UNCOND(context);
 	packetSent+=1;  //total packets sent 
@@ -57,22 +58,22 @@ void clientSend (std::string context, Ptr<const Packet> packet)
 }
 
 
-void serverRec (std::string context, Ptr<const Packet> packet)
+//trace sink function for keeping track of packets recieved  
+void Recieve (std::string context, Ptr<const Packet> packet)
 {
 	NS_LOG_UNCOND(context);
-	packetRec+=1; //total packet sent
-        std::cout << "chengyu tu madre" << "\n"; 
+	packetRec+=1; //total packets recieved 
         if(context == "/NodeList/4/ApplicationList/0/$ns3::UdpEchoServer/Rx"){
-              packetRec0++;
-              std::cout << "incrementing for c1" << "\n";
+        	packetRec0++;
+        	//std::cout << "incrementing for c1" << "\n";
         }
 	else if(context == "/NodeList/4/ApplicationList/1/$ns3::UdpEchoServer/Rx"){
- packetRec1++;
- std::cout << "incrementing for c2" << "\n";
+ 		packetRec1++;
+		//std::cout << "incrementing for c2" << "\n";
 }
 	else if(context == "/NodeList/4/ApplicationList/2/$ns3::UdpEchoServer/Rx") packetRec2++;
 	else if(context == "/NodeList/4/ApplicationList/3/$ns3::UdpEchoServer/Rx") packetRec3++;
-       //first number is decided by how many Ms there 1-4 
+       //first number is decided by how many Servers there are running?
 }
 
 int main (int argc, char *argv[])
@@ -82,8 +83,8 @@ int main (int argc, char *argv[])
   //float intervalTime = 0.1; //seconds
   uint32_t nMpdus = 1;
   uint32_t maxAmpduSize = 0;
-  bool enableRts = 0;
-  std::string interval = "0.0018";
+  bool enableRts = 1;
+  std::string interval = "0.0039"; //make it easier to change interval quickly
 
   CommandLine cmd;
   cmd.AddValue ("nMpdus", "Number of aggregated MPDUs", nMpdus);
@@ -201,7 +202,9 @@ int main (int argc, char *argv[])
   serverApp3.Stop (Seconds (simulationTime + 2));
   
 
-  //Install UDP clients on each of the MS nodes 
+  //Install UDP clients on each of the MS nodes
+  //comment out MS as needed for different scenarios 
+  //MS 1
   UdpEchoClientHelper myClient (ApInterface.GetAddress (0), 9);
   myClient.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
   myClient.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
@@ -210,7 +213,7 @@ int main (int argc, char *argv[])
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
  
-    
+  //MS 2  
   UdpEchoClientHelper myClient1 (ApInterface.GetAddress (0), 10);
   myClient1.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
   myClient1.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
@@ -218,7 +221,7 @@ int main (int argc, char *argv[])
   ApplicationContainer clientApp1 = myClient1.Install(wifiStaNodes.Get(1));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
-  /* 
+  //MS 3  
   UdpEchoClientHelper myClient2 (ApInterface.GetAddress (0), 11);
   myClient2.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
   myClient2.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
@@ -226,7 +229,7 @@ int main (int argc, char *argv[])
   ApplicationContainer clientApp2 = myClient2.Install(wifiStaNodes.Get(2));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
-  
+  //MS 4 
   UdpEchoClientHelper myClient3 (ApInterface.GetAddress (0), 12);
   myClient3.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
   myClient3.SetAttribute ("Interval", TimeValue (Time (interval))); //packets/s
@@ -234,27 +237,25 @@ int main (int argc, char *argv[])
   ApplicationContainer clientApp3 = myClient3.Install(wifiStaNodes.Get(3));
   clientApp0.Start(Seconds(1));
   clientApp0.Stop (Seconds (simulationTime+1));
-  */
 
-  /*
-  // Saturated UDP traffic from stations to AP
-  ApplicationContainer clientApp1 = myClient.Install (wifiStaNodes);
-  clientApp1.Start (Seconds (1.0));
-  clientApp1.Stop (Seconds (simulationTime + 1));
-  */
+
 
   phy.EnablePcap ("SimpleHtHiddenStations_Ap", apDevice.Get (0));
   phy.EnablePcap ("SimpleHtHiddenStations_Sta1", staDevices.Get (0));
   phy.EnablePcap ("SimpleHtHiddenStations_Sta2", staDevices.Get (1));
 
   Simulator::Stop (Seconds (simulationTime + 1));
-
-  Config::Connect("/NodeList/*/ApplicationList/*/$ns3::UdpEchoClient/Tx", MakeCallback(&clientSend));
-  Config::Connect("/NodeList/*/ApplicationList/*/$ns3::UdpEchoServer/Rx", MakeCallback(&serverRec));
+  
+  //Call trace sink functions
+  Config::Connect("/NodeList/*/ApplicationList/*/$ns3::UdpEchoClient/Tx", MakeCallback(&Send));
+  Config::Connect("/NodeList/*/ApplicationList/*/$ns3::UdpEchoServer/Rx", MakeCallback(&Recieve));
 
   Simulator::Run ();
   Simulator::Destroy ();
-
+  
+  
+  //calculate needed measurements
+  
   lostPackets0 = packetSent0 - packetRec0;
   lostPackets1 = packetSent1 - packetRec1;
   lostPackets2 = packetSent2 - packetRec2;
@@ -264,6 +265,8 @@ int main (int argc, char *argv[])
   throughput1 = packetRec1 * payloadSize * 8 / (simulationTime *  1000000.0 );
   throughput2 = packetRec2 * payloadSize * 8 / (simulationTime *  1000000.0 );
   throughput3 = packetRec3 * payloadSize * 8 / (simulationTime *  1000000.0 );
+  
+  //output needed measurements
 
   std::cout << "Packets sent for client 0: " << packetSent0 << "\n";
   std::cout << "Packets sent for client 1: " << packetSent1 << "\n";
